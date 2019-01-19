@@ -31,6 +31,7 @@ ngx_test="$CC -o $NGX_AUTOTEST $NGX_AUTOTEST.c"
 
 eval "$ngx_test >> $NGX_AUTOCONF_ERR 2>&1"
 
+# $NGX_AUTOTEST 文件如果存在并且可执行，则表示 <$ngx_include> 这个库是存在的
 if [ -x $NGX_AUTOTEST ]; then
 
     ngx_found=yes

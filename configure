@@ -7,23 +7,30 @@
 LC_ALL=C
 export LC_ALL
 
-. auto/options
-. auto/init
-. auto/sources
+. auto/options   # 处理 configure 的参数；设置后面要用到的变量 
+. auto/init      # 初始化，设置文件路径，生成 Mackefile 等
+. auto/sources   # 解析 nginx 的源码结构
 
+# 如果目录 $NGX_OBJS 不存在，则创建
+# $NGX_OBJS 目录，默认是 <nginx-source>/objs（见 auto/options）
+# 可以在执行 configure 时指定 builddir=DIR 选项，可以修改 $NGX_OBJ
 test -d $NGX_OBJS || mkdir -p $NGX_OBJS
 
+# 创建空文件 $NGX_AUTO_HEADERS_H 和 $NGX_AUTOCONF_ERR
 echo > $NGX_AUTO_HEADERS_H
 echo > $NGX_AUTOCONF_ERR
 
 echo "#define NGX_CONFIGURE \"$NGX_CONFIGURE\"" > $NGX_AUTO_CONFIG_H
 
 
+# 如果 DEBUG 参数是 YES，在 $NGX_AUTO_CONFIG_H 写入 DEBUG 宏
+# NGX_AUTO_CONFIG_H=$NGX_OBJS/ngx_auto_config.h
 if [ $NGX_DEBUG = YES ]; then
     have=NGX_DEBUG . auto/have
 fi
 
 
+# 取得操作系统的版本信息
 if test -z "$NGX_PLATFORM"; then
     echo "checking for OS"
 
@@ -46,22 +53,35 @@ else
     NGX_SYSTEM=$NGX_PLATFORM
 fi
 
+# 检查并设置编译器
 . auto/cc/conf
 
+# 如果不是 Window 系统，检查一些必要的头文件是否存在
+# 检查方式：编译一个包含指定库的 C 程序，看是否会出现编译错误
 if [ "$NGX_PLATFORM" != win32 ]; then
     . auto/headers
 fi
 
+# 检查当前的操作系统是否支持特定的 feature
 . auto/os/conf
 
 if [ "$NGX_PLATFORM" != win32 ]; then
     . auto/unix
 fi
 
+# 看是否启用线程
 . auto/threads
+
+# 定义了 ngx_modules 数组
+# 知名 Nginx 运行期间有哪些模块会参与到请求的处理中
+# 因此数组对成员的顺序是敏感的
+# 通过 --add-module= 参数加入的第三方模块也会在这一步写入 ngx_modules.c 文件中
 . auto/modules
+
+# 检查 Nginx 在链接期间需要的第三方静态库、动态库和目标文件是否存在
 . auto/lib/conf
 
+# 处理 Nginx 安装后的路径
 case ".$NGX_PREFIX" in
     .)
         NGX_PREFIX=${NGX_PREFIX:-/usr/local/nginx}
@@ -77,10 +97,12 @@ case ".$NGX_PREFIX" in
     ;;
 esac
 
+# 处理 Nginx 安装后 conf 的路径
 if [ ".$NGX_CONF_PREFIX" != "." ]; then
     have=NGX_CONF_PREFIX value="\"$NGX_CONF_PREFIX/\"" . auto/define
 fi
 
+# 处理 Nginx 安装后二进制文件、pid、lock 等其他文件的路径
 have=NGX_SBIN_PATH value="\"$NGX_SBIN_PATH\"" . auto/define
 have=NGX_CONF_PATH value="\"$NGX_CONF_PATH\"" . auto/define
 have=NGX_PID_PATH value="\"$NGX_PID_PATH\"" . auto/define
@@ -99,8 +121,12 @@ have=NGX_HTTP_UWSGI_TEMP_PATH value="\"$NGX_HTTP_UWSGI_TEMP_PATH\""
 have=NGX_HTTP_SCGI_TEMP_PATH value="\"$NGX_HTTP_SCGI_TEMP_PATH\""
 . auto/define
 
+# 创建编译时使用的 objs/Makefile，$NGX_MAKEFILE
 . auto/make
+# 为 objs/Makefile 加入需要的第三方静态库、动态库和二进制文件
 . auto/lib/make
+# 为 objs/Makefile 加入 install 功能
+# make install 将编译生成的必要文件复制到安装路径，建立必要的目录
 . auto/install
 
 # STUB
@@ -113,4 +139,5 @@ if [ ".$NGX_BUILD" != "." ]; then
     have=NGX_BUILD value="\"$NGX_BUILD\"" . auto/define
 fi
 
+# 显示 configure 的执行结果
 . auto/summary

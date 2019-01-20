@@ -58,6 +58,8 @@ fi
 
 # 如果不是 Window 系统，检查一些必要的头文件是否存在
 # 检查方式：编译一个包含指定库的 C 程序，看是否会出现编译错误
+# 检查结果放在 objs/autoconf.err 文件
+# 后面的检查脚本都使用了同样的方法
 if [ "$NGX_PLATFORM" != win32 ]; then
     . auto/headers
 fi
@@ -73,7 +75,7 @@ fi
 . auto/threads
 
 # 定义了 ngx_modules 数组
-# 知名 Nginx 运行期间有哪些模块会参与到请求的处理中
+# 指明 Nginx 运行期间有哪些模块会参与到请求的处理中
 # 因此数组对成员的顺序是敏感的
 # 通过 --add-module= 参数加入的第三方模块也会在这一步写入 ngx_modules.c 文件中
 . auto/modules

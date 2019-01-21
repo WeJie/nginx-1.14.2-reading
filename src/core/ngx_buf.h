@@ -17,16 +17,27 @@ typedef void *            ngx_buf_tag_t;
 
 typedef struct ngx_buf_s  ngx_buf_t;
 
+/*
+ * 缓冲区 ngx_buf_s 是 Nginx 中处理大数据的数据结构
+ * 这个数据结构既应用于内存数据也应用与磁盘数据
+ */
 struct ngx_buf_s {
-    u_char          *pos;
-    u_char          *last;
-    off_t            file_pos;
-    off_t            file_last;
+    /* post 与 last 之间，表示的是 Nginx 这次要处理的内存数据 */
+    u_char          *pos;           /* 通常表示将要处理的内存的位置 */
+    u_char          *last;          /* 通常表示将要处理的内存的截止位置 */
+
+    /* file_post 与 file_last 之间，表示的是 Nginx 这次要处理的文件数据 */
+    off_t            file_pos;      /* 通常表示将要处理的文件的位置 */
+    off_t            file_last;     /* 通常表示将要处理的文件的截止位置 */
 
     u_char          *start;         /* start of buffer */
     u_char          *end;           /* end of buffer */
+
+    /* 表示当前缓冲区的类型，由哪个模块使用就是指向这个模块的 ngx_module_t 变量的地址 */
     ngx_buf_tag_t    tag;
-    ngx_file_t      *file;
+    ngx_file_t      *file;          /* 引用的文件 */
+
+    /* 缓冲区的影子缓冲区，该成员很少使用，使用方式较为复杂，要谨慎使用 */
     ngx_buf_t       *shadow;
 
 
@@ -42,14 +53,29 @@ struct ngx_buf_s {
     /* the buf's content is mmap()ed and must not be changed */
     unsigned         mmap:1;
 
+    /* 标志位，为 1 时表示可回收 */
     unsigned         recycled:1;
+    /* 标志位，为 1 时表示这段缓冲区处理的是文件不是内存 */
     unsigned         in_file:1;
+    /* 标志位，为 1 时表示需要执行 flush 操作 */
     unsigned         flush:1;
+    /*
+     * 标志位，对这个缓冲区的处理是否要使用同步的方式
+     * 同步方式有可能阻塞 Nginx，异步处理是 Nginx 能做到高并发的关键，需要谨慎使用这个标志
+     */
     unsigned         sync:1;
+    /*
+     * 标志位，是否为最后一块缓冲区
+     * ngx_buf_t 可以用 ngx_chain_t 链表串起来
+     * 当为 1 时，表示当前时最后一块待处理的缓冲区
+     */
     unsigned         last_buf:1;
+    /* 标志位，为 1 时表示 ngx_chain_t 中最后一块缓冲区 */
     unsigned         last_in_chain:1;
 
+    /* 标志位，是否最后一个影子缓存块，和 shadow 配合使用 */
     unsigned         last_shadow:1;
+    /* 标志位，当前缓冲区是后临时文件 */
     unsigned         temp_file:1;
 
     /* STUB */ int   num;
@@ -57,8 +83,8 @@ struct ngx_buf_s {
 
 
 struct ngx_chain_s {
-    ngx_buf_t    *buf;
-    ngx_chain_t  *next;
+    ngx_buf_t    *buf;       /* 指向当前缓冲区 */
+    ngx_chain_t  *next;      /* 指向下一个 ngx_chain_t */
 };
 
 

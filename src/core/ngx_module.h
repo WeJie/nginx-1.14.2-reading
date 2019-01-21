@@ -235,6 +235,7 @@ struct ngx_module_s {
     ngx_command_t        *commands;
     ngx_uint_t            type;
 
+    /* Nginx 启动、停止过程中的 7 个执行点，init 到 exit */
     ngx_int_t           (*init_master)(ngx_log_t *log);
 
     ngx_int_t           (*init_module)(ngx_cycle_t *cycle);

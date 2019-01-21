@@ -89,10 +89,16 @@ typedef struct {
 } ngx_hash_keys_arrays_t;
 
 
+/* key-value 数据结构 */
 typedef struct {
+    /*
+     * hash 成员 让 ngx_table_elt_t 可以是某个散列表数据结构的成员
+     * 使用 hash 成员可以在 ngx_hash_t 中更快地找到 ngx_table_elt_t 数据
+     */
     ngx_uint_t        hash;
     ngx_str_t         key;
     ngx_str_t         value;
+    /* lowcase_key 帮助忽略 HTTP 头部名称的大小写 */
     u_char           *lowcase_key;
 } ngx_table_elt_t;
 

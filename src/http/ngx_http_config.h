@@ -20,18 +20,37 @@ typedef struct {
     void        **loc_conf;
 } ngx_http_conf_ctx_t;
 
-
+/*
+ * HTTP 框架在读取、重载配置文件时定义了有 ngx_http_module_t 接口描述的 8 个阶段
+ * HTTP 框架在启动的过程中会在每个阶段中调用 ngx_http_module_t 中的相应的方法
+ * 如果某个回调方法设为 NULL 空指针，那么 HTTP 不会调用它
+ * 下面定义的顺序和 HTTP 框架实际上的回调顺序是不同
+ */
 typedef struct {
+    /* 解析配置文件前执行 */
     ngx_int_t   (*preconfiguration)(ngx_conf_t *cf);
+    /* 解析配置文件后执行 */
     ngx_int_t   (*postconfiguration)(ngx_conf_t *cf);
 
+    /* 
+     * 当需要创建数据结构用于存储 main 级别（属于 http 块）的配置项时，
+     * 可以通过 create_main_conf 方法创建存储全局配置项的结构体
+     */
     void       *(*create_main_conf)(ngx_conf_t *cf);
+    /* 初始化 main 级别的配置项 */
     char       *(*init_main_conf)(ngx_conf_t *cf, void *conf);
 
+    /*
+     * 当需要创建数据结构用于存储 srv 级别（属于虚拟主机 server）的配置项时，
+     * 可以通过这个方法创建存储 srv 级别的配置项结构体
+     */
     void       *(*create_srv_conf)(ngx_conf_t *cf);
+    /* 合并 main 级别和 srv 级别中的同名配置项 */
     char       *(*merge_srv_conf)(ngx_conf_t *cf, void *prev, void *conf);
 
+    /* 当需要创建 loc 级别（属于 location）的配置项时，可以实现 create_loc_conf 方法 */
     void       *(*create_loc_conf)(ngx_conf_t *cf);
+    /* 合并 srv 级别和 loc 级别中的同名配置项 */
     char       *(*merge_loc_conf)(ngx_conf_t *cf, void *prev, void *conf);
 } ngx_http_module_t;
 

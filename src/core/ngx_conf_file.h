@@ -73,13 +73,29 @@
 
 #define NGX_MAX_CONF_ERRSTR  1024
 
-
+/*
+ * 定义 HTTP 模块时，最重要的是要设置 ctx 和 commands 两个成员
+ * commands 数组用于定义模块的配置文件参数
+ * 每一个数组元素都是 ngx_command_t 类型，数组以 ngx_null_command 结尾
+ * Nginx 在解析配置文件的配置项的时候首先会遍历所有的模块
+ * 再对每一个模块，会遍历其 commands 数组
+ */
 struct ngx_command_s {
+    /* 配置项名称，如 gzip */
     ngx_str_t             name;
+    /*
+     * 配置项的类型，即配置项可以出现的位置（server{}\location{}）
+     * 还有可以携带的参数
+     */
     ngx_uint_t            type;
+    /* 出现了 name 中指定的配置项后，会调用 set 方法处理配置项的参数 */
     char               *(*set)(ngx_conf_t *cf, ngx_command_t *cmd, void *conf);
+
+    /* 在配置文件中的偏移量 */
     ngx_uint_t            conf;
+    /* 与 conf 配合，帮助解析配置项 */
     ngx_uint_t            offset;
+    /* 配置项读取后的处理方法，必须是 ngx_conf_post_t */
     void                 *post;
 };
 

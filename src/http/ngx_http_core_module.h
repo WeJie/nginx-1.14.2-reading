@@ -104,25 +104,47 @@ typedef struct {
     u_char                     addr[NGX_SOCKADDR_STRLEN + 1];
 } ngx_http_listen_opt_t;
 
-
+/*
+ * Nginx 的 HTTP 框架定义了 11 个阶段处理请求
+ * 第三方 HTTP 模块只能接入其中的 7 个阶段
+ */
 typedef enum {
+    /* 在接收到完整的 HTTP 头部后的阶段 */
     NGX_HTTP_POST_READ_PHASE = 0,
 
+    /* 在还没有查询到 URI 匹配的 location 前，这时 rewrite 重写 URL */
     NGX_HTTP_SERVER_REWRITE_PHASE,
 
+    /* 
+     * 根据 URI 寻找匹配的 location，这个阶段通常由 ngx_http_core_module 模块实现，
+     * 不建议其他 HTTP 模块重新定义这一阶段的行为
+     */
     NGX_HTTP_FIND_CONFIG_PHASE,
     NGX_HTTP_REWRITE_PHASE,
+    /* 
+     * 在 rewrite 重写 URL 后重新跳转到 NGX_HTTP_FIND_CONFIG_PHASE
+     * 找到与新 URI 匹配的 location
+     * 这一阶段是无法由第三方 HTTP 模块处理的，仅由 ngx_http_core_module 模块使用
+     */
     NGX_HTTP_POST_REWRITE_PHASE,
-
+    /* 处理 HTTP_ACCESS_PHASE 之前 HTTP 模块可以介入的地方 */
     NGX_HTTP_PREACCESS_PHASE,
 
+    /* 这个阶段让 HTTP 模块判断是否允许访问 Nginx 服务器 */
     NGX_HTTP_ACCESS_PHASE,
+    /* 
+     * 当在 NGX_HTTP_ACCESS_PHASE 阶段，HTTP 模块的 handler 方法返回不允许访问的状态码时
+     * （实际上是 NGX_HTTP_FORBIDDEN 或者 NGX_HTTP_UNAUTHORIZED），会在这个阶段负责
+     * 构造拒绝服务的响应
+     */
     NGX_HTTP_POST_ACCESS_PHASE,
 
     NGX_HTTP_PRECONTENT_PHASE,
 
+    /* 处理 HTTP 请求内容的阶段 */
     NGX_HTTP_CONTENT_PHASE,
 
+    /* 处理完请求记录日志的阶段 */
     NGX_HTTP_LOG_PHASE
 } ngx_http_phases;
 
